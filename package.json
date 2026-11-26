@@ -1,0 +1,49 @@
+{
+  "name": "paseo-om-status",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Read live Pi Observational Memory status from the Paseo composer without sending a message.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlpullen/paseo-om-status.git"
+  },
+  "keywords": ["pi-package", "paseo", "observational-memory"],
+  "files": [
+    "paseo-plugin.json",
+    "OVERVIEW.md",
+    "HANDOFF.md",
+    "docs/mockups/",
+    "docs/paseo-0.17.4-compatibility.md",
+    "index.client.tsx",
+    "index.server.ts",
+    "client/",
+    "server/",
+    "shared/",
+    "pi/"
+  ],
+  "pi": {
+    "extensions": [
+      "./pi/index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "pi-observational-memory": "3.1.4",
+    "@earendil-works/pi-coding-agent": "0.84.2",
+    "@earendil-works/pi-agent-core": "0.84.2",
+    "@earendil-works/pi-ai": "0.84.2",
+    "@earendil-works/pi-tui": "0.84.2",
+    "@types/node": "^22.0.0",
+    "@getpaseo/plugin": "0.17.4",
+    "@tanstack/react-query": "^5.90.11",
+    "@types/react": "~19.2.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "typescript": "^5.9.3",
+    "zod": "^4.4.3"
+  }
+}
