@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { setTimeout as delay } from "node:timers/promises";
 import { test } from "node:test";
 import { parseStatus } from "../pi/status-text.ts";
 import { readBridge } from "../server/bridge.ts";
-import { bridgeReplySchema, sampleSchema } from "../shared/status.ts";
+import { sampleSchema } from "../shared/status.ts";
 import { BRIDGE_DIRECTORY, BRIDGE_SOCKET } from "../shared/wire.ts";
 
 test(
@@ -22,11 +22,8 @@ test(
     const piDir = join(cwd, "agent");
     const bridgeDir = join(cwd, "bridge");
     await mkdir(bridgeDir);
-    await mkdir(join(piDir, "npm"), { recursive: true });
-    await symlink(
-      resolve(process.env.PASEO_OM_TEST_PI_PACKAGES ?? "node_modules"),
-      join(piDir, "npm", "node_modules"),
-    );
+    // There must be no separately installed OM in this profile.
+    await mkdir(piDir);
     const executable = process.env.PASEO_OM_TEST_PI;
     const pi = spawn(
       executable ?? process.execPath,
@@ -92,6 +89,16 @@ test(
     };
     try {
       const original = await session();
+      const { commands } = (await rpc("get_commands")) as {
+        commands: Array<{ name: string }>;
+      };
+      assert.deepEqual(
+        commands
+          .map(({ name }) => name)
+          .filter((name) => name.startsWith("om:"))
+          .sort(),
+        ["om:status", "om:view"],
+      );
       await rpc("prompt", { message: "/om:status" }); // separate, human-command control
       const notify = await waitFor(
         (event) =>
@@ -137,16 +144,6 @@ test(
         ).sessionId,
         switched,
       );
-
-      // Switching into a profile without OM must not reuse the prior session's status.
-      await rm(join(piDir, "npm", "node_modules"));
-      await rpc("new_session");
-      const withoutOm = await session();
-      const unsupported = bridgeReplySchema.parse(
-        JSON.parse((await readBridge(socket, withoutOm, "GET")).body),
-      );
-      assert.equal(unsupported.sessionId, withoutOm);
-      assert.ok("inapplicable" in unsupported);
     } finally {
       pi.kill();
       await exit;

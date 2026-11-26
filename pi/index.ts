@@ -1,11 +1,9 @@
 import {
-  getAgentDir,
   VERSION,
   type ExtensionAPI,
   type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { isAbsolute, join } from "node:path";
 import {
@@ -27,24 +25,12 @@ export default async function contribute(pi: ExtensionAPI): Promise<void> {
     directory && isAbsolute(directory) && process.platform !== "win32"
       ? join(directory, BRIDGE_SOCKET)
       : null;
-  const installed = join(
-    getAgentDir(),
-    "npm",
-    "node_modules",
-    "pi-observational-memory",
-  );
-  const manifestPath = join(installed, "package.json");
-  const supported =
-    (VERSION === "0.84.2" || VERSION === "1.6.1") &&
-    existsSync(manifestPath) &&
-    JSON.parse(readFileSync(manifestPath, "utf8")).version === "3.1.4";
+  const supported = VERSION === "0.84.2" || VERSION === "1.6.1";
   let status: Command["handler"] | undefined;
   if (supported) {
-    const entry = join(installed, "src", "index.ts");
-    const { default: observationalMemory }: { default?: unknown } =
-      await import(entry);
-    if (typeof observationalMemory !== "function")
-      throw new Error("OM has no extension factory");
+    // Pi installs the pinned runtime dependency in this package's own module tree.
+    const { default: observationalMemory } =
+      await import("pi-observational-memory/src/index.ts");
     // Install OM exactly once with its own Runtime. Keep the human-facing registration intact.
     observationalMemory(
       address

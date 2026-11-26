@@ -15,8 +15,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-mkdir -p "$base/paseo" "$base/pi/npm" "$base/work"
-ln -s "${PASEO_OM_TEST_PI_PACKAGES:-$root/node_modules}" "$base/pi/npm/node_modules"
+mkdir -p "$base/paseo" "$base/pi" "$base/work"
 if [[ -n ${PASEO_OM_TEST_PI:-} ]]; then
   printf '#!/bin/sh\nexec "%s" --no-extensions -e "%s/pi/index.ts" "$@"\n' \
     "$PASEO_OM_TEST_PI" "$root" > "$base/pi-test"
