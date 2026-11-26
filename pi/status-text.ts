@@ -1,6 +1,6 @@
 import type { OmMetrics } from "../shared/status.ts";
 
-// Decode only the output of the pinned OM 3.1.4 handler, never chat or a session log.
+// Decode the OM status format verified with 3.1.4, never chat or a session log.
 // OM localized these strings already; neither the parser nor the UI recalculates them.
 const number = String.raw`(\p{Nd}[\p{Nd}\p{Zs}.,'’٬]*)`;
 const progress = (label: string, unit: string) =>

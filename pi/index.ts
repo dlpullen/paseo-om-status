@@ -1,7 +1,6 @@
-import {
-  VERSION,
-  type ExtensionAPI,
-  type ExtensionContext,
+import type {
+  ExtensionAPI,
+  ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
@@ -25,28 +24,24 @@ export default async function contribute(pi: ExtensionAPI): Promise<void> {
     directory && isAbsolute(directory) && process.platform !== "win32"
       ? join(directory, BRIDGE_SOCKET)
       : null;
-  const supported = VERSION === "0.84.2" || VERSION === "1.6.1";
+  const { default: observationalMemory } =
+    await import("pi-observational-memory/src/index.ts");
   let status: Command["handler"] | undefined;
-  if (supported) {
-    // Pi installs the pinned runtime dependency in this package's own module tree.
-    const { default: observationalMemory } =
-      await import("pi-observational-memory/src/index.ts");
-    // Install OM exactly once with its own Runtime. Keep the human-facing registration intact.
-    observationalMemory(
-      address
-        ? new Proxy(pi, {
-            get(target, property, receiver) {
-              if (property !== "registerCommand")
-                return Reflect.get(target, property, receiver);
-              return (name: string, command: Command) => {
-                if (name === "om:status") status = command.handler;
-                target.registerCommand(name, command);
-              };
-            },
-          })
-        : pi,
-    );
-  }
+  // Register normal OM regardless of Pi's version or whether Paseo can read status.
+  await observationalMemory(
+    address
+      ? new Proxy(pi, {
+          get(target, property, receiver) {
+            if (property !== "registerCommand")
+              return Reflect.get(target, property, receiver);
+            return (name: string, command: Command) => {
+              if (name === "om:status") status = command.handler;
+              target.registerCommand(name, command);
+            };
+          },
+        })
+      : pi,
+  );
   if (!address) return;
 
   let binding: Binding | null = null;
@@ -71,17 +66,13 @@ export default async function contribute(pi: ExtensionAPI): Promise<void> {
         response.writeHead(200, { [REVISION_HEADER]: identity.revision }).end();
         return;
       }
-      if (!supported) {
+      if (!status) {
         response
           .writeHead(200, {
             "content-type": "application/json",
             "cache-control": "no-store",
           })
           .end(JSON.stringify({ ...identity, inapplicable: true }));
-        return;
-      }
-      if (!status) {
-        response.writeHead(503).end();
         return;
       }
 
@@ -106,11 +97,15 @@ export default async function contribute(pi: ExtensionAPI): Promise<void> {
       const metrics =
         text && text.length <= MAX_BRIDGE_BYTES ? parseStatus(text) : null;
       if (
-        !metrics ||
         binding !== active ||
         active.ctx.sessionManager.getSessionId() !== sessionId
       ) {
         response.writeHead(409).end();
+        return;
+      }
+      if (!metrics) {
+        // OM can keep working even if a newer release changes the report format.
+        response.writeHead(503).end();
         return;
       }
       const body = JSON.stringify({ ...identity, metrics });

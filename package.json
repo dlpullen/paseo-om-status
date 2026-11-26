@@ -2,7 +2,7 @@
   "name": "paseo-om-status",
   "type": "module",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Read live Pi Observational Memory status from the Paseo composer without sending a message.",
   "repository": {
     "type": "git",
@@ -32,7 +32,7 @@
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test test/*.test.ts"
   },
   "dependencies": {
-    "pi-observational-memory": "3.1.4"
+    "pi-observational-memory": ">=3.1.4"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
